@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Bin Management</title>
+
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+
+    <div class="layout">
+
+        <!-- Sidebar -->
+
+        <aside class="sidebar">
+
+            <h2>BioWaste</h2>
+
+            <nav>
+
+                <a href="dashboard.html">
+                    Dashboard
+                </a>
+
+                <a href="waste.html">
+                    Waste Management
+                </a>
+
+                <a href="bins.html" class="active">
+                    Bins
+                </a>
+
+                <a href="#">
+                    Collections
+                </a>
+
+                <a href="#">
+                    Alerts
+                </a>
+
+                <a href="#">
+                    Reports
+                </a>
+
+            </nav>
+
+            <button id="logoutBtn">
+                Logout
+            </button>
+
+        </aside>
+
+
+        <!-- Main Content -->
+
+        <main class="main-content">
+
+            <h1>Bin Management</h1>
+
+            <p>Monitor biomedical waste bins and their current capacity.</p>
+
+
+            <div class="table-container">
+
+                <table>
+
+                    <thead>
+
+                        <tr>
+                            <th>Bin ID</th>
+                            <th>Location</th>
+                            <th>Category</th>
+                            <th>Bin Type</th>
+                            <th>Capacity</th>
+                            <th>Current Level</th>
+                            <th>Status</th>
+                            <th>Capacity %</th>
+                        </tr>
+
+                    </thead>
+
+                    <tbody id="binTableBody">
+
+                        <tr>
+                            <td colspan="8">
+                                Loading...
+                            </td>
+                        </tr>
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </main>
+
+    </div>
+
+
+    <script src="js/bins.js"></script>
+
+</body>
+
+</html>

@@ -1,8 +1,12 @@
 from flask import Flask, jsonify, request
+
 from datetime import date, datetime
 from db import get_db_connection
+from flask_cors import CORS
+
 
 app = Flask(__name__)
+CORS(app)
 
 
 @app.route("/")
@@ -20,6 +24,57 @@ def test_db():
 
     return "Database Connection Failed!"
 
+@app.route("/api/login", methods=["POST"])
+def login():
+
+    data = request.get_json()
+
+    email = data.get("email")
+    password = data.get("password")
+
+    if not email or not password:
+        return jsonify({
+            "message": "Email and password are required"
+        }), 400
+
+    connection = get_db_connection()
+    cursor = connection.cursor(dictionary=True)
+
+    cursor.execute("""
+        SELECT user_id, name, email, password_hash, role, is_active
+        FROM users
+        WHERE email = %s
+    """, (email,))
+
+    user = cursor.fetchone()
+
+    cursor.close()
+    connection.close()
+
+    if not user:
+        return jsonify({
+            "message": "Invalid email or password"
+        }), 401
+
+    if not user["is_active"]:
+        return jsonify({
+            "message": "User account is inactive"
+        }), 403
+
+    if user["password_hash"] != password:
+        return jsonify({
+            "message": "Invalid email or password"
+        }), 401
+
+    return jsonify({
+        "message": "Login successful",
+        "user": {
+            "user_id": user["user_id"],
+            "name": user["name"],
+            "email": user["email"],
+            "role": user["role"]
+        }
+    }), 200
 
 
 @app.route("/api/locations")

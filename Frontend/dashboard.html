@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Dashboard - Biomedical Waste Management</title>
+
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+
+    <div class="layout">
+
+        <!-- Sidebar -->
+
+        <aside class="sidebar">
+
+            <h2>BioWaste</h2>
+
+            <nav>
+
+                <a href="dashboard.html" class="active">
+                    Dashboard
+                </a>
+
+                <a href="waste.html">
+                    Waste Management
+                </a>
+
+                <a href="bins.html">
+                    Bins
+                </a>
+
+                <a href="collections.html">
+                    Collections
+                </a>
+
+                <a href="#">
+                    Alerts
+                </a>
+
+                <a href="#">
+                    Reports
+                </a>
+
+            </nav>
+
+            <button id="logoutBtn">
+                Logout
+            </button>
+
+        </aside>
+
+
+        <!-- Main Content -->
+
+        <main class="main-content">
+
+            <div class="top-section">
+
+                <div>
+                    <h1>Dashboard</h1>
+
+                    <p>
+                        Welcome, <span id="userName"></span>
+                    </p>
+
+                    <p>
+                        Role: <span id="userRole"></span>
+                    </p>
+                </div>
+
+            </div>
+
+
+            <!-- Dashboard Cards -->
+
+            <div class="dashboard">
+
+                <div class="card">
+                    <h2>Total Waste</h2>
+                    <p id="totalWaste">Loading...</p>
+                </div>
+
+                <div class="card">
+                    <h2>Total Bins</h2>
+                    <p id="totalBins">Loading...</p>
+                </div>
+
+                <div class="card">
+                    <h2>Near Full Bins</h2>
+                    <p id="nearFullBins">Loading...</p>
+                </div>
+
+                <div class="card">
+                    <h2>Open Alerts</h2>
+                    <p id="openAlerts">Loading...</p>
+                </div>
+
+                <div class="card">
+                    <h2>Total Collections</h2>
+                    <p id="totalCollections">Loading...</p>
+                </div>
+
+            </div>
+
+        </main>
+
+    </div>
+
+
+    <script src="js/dashboard.js"></script>
+
+</body>
+
+</html>

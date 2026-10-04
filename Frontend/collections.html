@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Collections - Biomedical Waste Management</title>
+
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+
+    <div class="layout">
+
+        <aside class="sidebar">
+
+            <h2>BioWaste</h2>
+
+            <nav>
+
+                <a href="dashboard.html">
+                    Dashboard
+                </a>
+
+                <a href="waste.html">
+                    Waste Management
+                </a>
+
+                <a href="bins.html">
+                    Bins
+                </a>
+
+                <a href="collections.html" class="active">
+                    Collections
+                </a>
+
+                <a href="#">
+                    Alerts
+                </a>
+
+                <a href="#">
+                    Reports
+                </a>
+
+            </nav>
+
+            <button id="logoutBtn">
+                Logout
+            </button>
+
+        </aside>
+
+
+        <main class="main-content">
+
+            <h1>Collections</h1>
+
+            <p>Record and monitor biomedical waste collection.</p>
+
+
+            <!-- Collection Form -->
+
+            <div class="form-container">
+
+                <form id="collectionForm">
+
+                    <label for="wasteRecord">
+                        Waste Record ID
+                    </label>
+
+                    <input
+                        type="number"
+                        id="wasteRecord"
+                        placeholder="Enter waste record ID"
+                        required
+                    >
+
+
+                    <label for="bin">
+                        Bin ID
+                    </label>
+
+                    <select id="bin" required>
+
+                        <option value="">
+                            Select Bin
+                        </option>
+
+                    </select>
+
+
+                    <label for="quantity">
+                        Quantity Collected (kg)
+                    </label>
+
+                    <input
+                        type="number"
+                        id="quantity"
+                        placeholder="Enter quantity"
+                        min="0.01"
+                        step="0.01"
+                        required
+                    >
+
+
+                    <button type="submit">
+                        Complete Collection
+                    </button>
+
+                    <p id="message"></p>
+
+                </form>
+
+            </div>
+
+
+            <!-- Collection Records -->
+
+            <div class="table-container">
+
+                <h2>Collection Records</h2>
+
+                <table>
+
+                    <thead>
+
+                        <tr>
+                            <th>Collection ID</th>
+                            <th>Waste Record</th>
+                            <th>Bin ID</th>
+                            <th>Operator</th>
+                            <th>Quantity</th>
+                            <th>Status</th>
+                        </tr>
+
+                    </thead>
+
+                    <tbody id="collectionTableBody">
+
+                        <tr>
+                            <td colspan="6">
+                                Loading...
+                            </td>
+                        </tr>
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </main>
+
+    </div>
+
+
+    <script src="js/collections.js"></script>
+
+</body>
+
+</html>
