@@ -321,6 +321,38 @@ def update_bin_level():
 
     connection.commit()
 
+
+    # Check if bin is nearly full
+    capacity_percentage = (new_level / float(bin_data["max_capacity"])) * 100
+
+    if capacity_percentage >= 80:
+        # Check if an open alert already exists
+        cursor.execute("""
+            SELECT alert_id
+            FROM alerts
+            WHERE bin_id = %s
+            AND alert_type = 'BIN_NEAR_FULL'
+            AND status = 'OPEN'
+            LIMIT 1
+        """, (bin_id,))
+
+        existing_alert = cursor.fetchone()
+
+        # Create alert only if no open alert exists
+        if not existing_alert:
+            cursor.execute("""
+                INSERT INTO alerts
+                (bin_id, alert_type, message, severity)
+                VALUES (%s, %s, %s, %s)
+            """, (
+                bin_id,
+                "BIN_NEAR_FULL",
+                f"Bin {bin_id} is {capacity_percentage:.1f}% full",
+                "HIGH"
+            ))
+
+            connection.commit()
+
     cursor.close()
     connection.close()
 
@@ -398,6 +430,7 @@ def create_collection():
     bin_id = data.get("bin_id")
     collected_by = data.get("collected_by")
     quantity_collected = data.get("quantity_collected")
+
     collection_date = date.today()
     collection_time = datetime.now().time()
 
@@ -412,36 +445,108 @@ def create_collection():
         }), 400
 
     connection = get_db_connection()
-    cursor = connection.cursor()
+    cursor = connection.cursor(dictionary=True)
 
+    # 1. Check the bin
+    cursor.execute("""
+        SELECT *
+        FROM bins
+        WHERE bin_id = %s
+    """, (bin_id,))
+
+    bin_data = cursor.fetchone()
+
+    if not bin_data:
+        cursor.close()
+        connection.close()
+
+        return jsonify({
+            "message": "Bin not found"
+        }), 404
+
+    # 2. Check that collection quantity is not greater than bin level
+    if float(quantity_collected) > float(bin_data["current_level"]):
+        cursor.close()
+        connection.close()
+
+        return jsonify({
+            "message": "Collected quantity cannot be greater than current bin level"
+        }), 400
+
+    previous_level = float(bin_data["current_level"])
+    new_level = previous_level - float(quantity_collected)
+
+    # 3. Create collection record
     query = """
-    INSERT INTO collections
-    (waste_record_id, bin_id, collected_by, quantity_collected,
-     collection_date, collection_time)
-    VALUES (%s, %s, %s, %s, %s, %s)
-"""
+        INSERT INTO collections
+        (waste_record_id, bin_id, collected_by, quantity_collected,
+         collection_date, collection_time)
+        VALUES (%s, %s, %s, %s, %s, %s)
+    """
 
     values = (
-    waste_record_id,
-    bin_id,
-    collected_by,
-    quantity_collected,
-    collection_date,
-    collection_time
-)
+        waste_record_id,
+        bin_id,
+        collected_by,
+        quantity_collected,
+        collection_date,
+        collection_time
+    )
 
     cursor.execute(query, values)
 
-    connection.commit()
-
     collection_id = cursor.lastrowid
+
+    # 4. Update bin level
+    cursor.execute("""
+        UPDATE bins
+        SET current_level = %s,
+            last_updated = CURRENT_TIMESTAMP
+        WHERE bin_id = %s
+    """, (new_level, bin_id))
+
+    # 5. Create bin status history
+    change_quantity = new_level - previous_level
+
+    cursor.execute("""
+        INSERT INTO bin_status_history
+        (bin_id, changed_by, previous_level, new_level, change_quantity)
+        VALUES (%s, %s, %s, %s, %s)
+    """, (
+        bin_id,
+        collected_by,
+        previous_level,
+        new_level,
+        change_quantity
+    ))
+
+    # 6. Check whether the bin is still near full
+    capacity_percentage = (
+        new_level / float(bin_data["max_capacity"])
+    ) * 100
+
+    # 7. If below 80%, resolve the open near-full alert
+    if capacity_percentage < 80:
+
+        cursor.execute("""
+            UPDATE alerts
+            SET status = 'RESOLVED'
+            WHERE bin_id = %s
+            AND alert_type = 'BIN_NEAR_FULL'
+            AND status = 'OPEN'
+        """, (bin_id,))
+
+    connection.commit()
 
     cursor.close()
     connection.close()
 
     return jsonify({
-        "message": "Collection record created successfully",
-        "collection_id": collection_id
+        "message": "Collection completed successfully",
+        "collection_id": collection_id,
+        "bin_id": bin_id,
+        "previous_level": previous_level,
+        "new_level": new_level
     }), 201
 
 @app.route("/api/alerts", methods=["POST"])
@@ -488,6 +593,117 @@ def create_alert():
         "message": "Alert created successfully",
         "alert_id": alert_id
     }), 201
+
+
+
+
+
+
+@app.route("/api/alerts/<int:alert_id>", methods=["PUT"])
+def update_alert_status(alert_id):
+
+    data = request.get_json()
+
+    status = data.get("status")
+
+    if not status:
+        return jsonify({
+            "message": "Status is required"
+        }), 400
+
+    connection = get_db_connection()
+    cursor = connection.cursor()
+
+    cursor.execute("""
+        SELECT alert_id
+        FROM alerts
+        WHERE alert_id = %s
+    """, (alert_id,))
+
+    alert = cursor.fetchone()
+
+    if not alert:
+        cursor.close()
+        connection.close()
+
+        return jsonify({
+            "message": "Alert not found"
+        }), 404
+
+    cursor.execute("""
+        UPDATE alerts
+        SET status = %s
+        WHERE alert_id = %s
+    """, (status, alert_id))
+
+    connection.commit()
+
+    cursor.close()
+    connection.close()
+
+    return jsonify({
+        "message": "Alert status updated successfully",
+        "alert_id": alert_id,
+        "status": status
+    }), 200
+
+
+
+
+
+@app.route("/api/dashboard", methods=["GET"])
+def get_dashboard():
+
+    connection = get_db_connection()
+    cursor = connection.cursor(dictionary=True)
+
+    # Total waste quantity
+    cursor.execute("""
+        SELECT COALESCE(SUM(quantity), 0) AS total_waste
+        FROM waste_records
+    """)
+    total_waste = cursor.fetchone()["total_waste"]
+
+    # Total bins
+    cursor.execute("""
+        SELECT COUNT(*) AS total_bins
+        FROM bins
+    """)
+    total_bins = cursor.fetchone()["total_bins"]
+
+    # Near-full bins
+    cursor.execute("""
+        SELECT COUNT(*) AS near_full_bins
+        FROM bins
+        WHERE current_level >= (max_capacity * 0.80)
+    """)
+    near_full_bins = cursor.fetchone()["near_full_bins"]
+
+    # Open alerts
+    cursor.execute("""
+        SELECT COUNT(*) AS open_alerts
+        FROM alerts
+        WHERE status = 'OPEN'
+    """)
+    open_alerts = cursor.fetchone()["open_alerts"]
+
+    # Total collections
+    cursor.execute("""
+        SELECT COUNT(*) AS total_collections
+        FROM collections
+    """)
+    total_collections = cursor.fetchone()["total_collections"]
+
+    cursor.close()
+    connection.close()
+
+    return jsonify({
+        "total_waste": float(total_waste),
+        "total_bins": total_bins,
+        "near_full_bins": near_full_bins,
+        "open_alerts": open_alerts,
+        "total_collections": total_collections
+    }), 200
 
 if __name__ == "__main__":
     app.run(debug=True)
