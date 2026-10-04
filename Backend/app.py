@@ -1,4 +1,5 @@
-from flask import Flask, jsonify,request
+from flask import Flask, jsonify, request
+from datetime import date, datetime
 from db import get_db_connection
 
 app = Flask(__name__)
@@ -163,6 +164,8 @@ def create_waste_record():
     created_by = data.get("created_by")
     waste_type = data.get("waste_type")
     quantity = data.get("quantity")
+    record_date = date.today()
+    record_time = datetime.now().time()
 
     if not category_id or not location_id or not created_by:
         return jsonify({
@@ -179,8 +182,8 @@ def create_waste_record():
 
     query = """
         INSERT INTO waste_records
-        (category_id, location_id, created_by, waste_type, quantity)
-        VALUES (%s, %s, %s, %s, %s)
+        (category_id, location_id, created_by, waste_type, quantity, record_date, record_time)
+        VALUES (%s, %s, %s, %s, %s, %s, %s)
     """
 
     values = (
@@ -188,7 +191,9 @@ def create_waste_record():
         location_id,
         created_by,
         waste_type,
-        quantity
+        quantity,
+        record_date,
+        record_time
     )
 
     cursor.execute(query, values)
@@ -203,6 +208,285 @@ def create_waste_record():
     return jsonify({
         "message": "Waste record created successfully",
         "waste_record_id": waste_record_id
+    }), 201
+
+
+
+
+
+@app.route("/api/assign-bin", methods=["POST"])
+def assign_bin():
+
+    data = request.get_json()
+
+    location_id = data.get("location_id")
+    category_id = data.get("category_id")
+    quantity = data.get("quantity")
+
+    if not location_id or not category_id or not quantity:
+        return jsonify({
+            "message": "Location, category and quantity are required"
+        }), 400
+
+    connection = get_db_connection()
+    cursor = connection.cursor(dictionary=True)
+
+    query = """
+        SELECT *
+        FROM bins
+        WHERE location_id = %s
+        AND category_id = %s
+        AND current_level + %s <= max_capacity
+        AND status = 'AVAILABLE'
+        LIMIT 1
+    """
+
+    cursor.execute(
+        query,
+        (location_id, category_id, quantity)
+    )
+
+    bin_data = cursor.fetchone()
+
+    cursor.close()
+    connection.close()
+
+    if not bin_data:
+        return jsonify({
+            "message": "No suitable bin available"
+        }), 404
+
+    return jsonify({
+        "message": "Suitable bin found",
+        "bin_id": bin_data["bin_id"],
+        "available_space": float(
+            bin_data["max_capacity"] - bin_data["current_level"]
+        )
+    }), 200
+
+
+
+
+@app.route("/api/update-bin-level", methods=["POST"])
+def update_bin_level():
+
+    data = request.get_json()
+
+    bin_id = data.get("bin_id")
+    quantity = data.get("quantity")
+
+    if not bin_id or not quantity:
+        return jsonify({
+            "message": "Bin ID and quantity are required"
+        }), 400
+
+    connection = get_db_connection()
+    cursor = connection.cursor(dictionary=True)
+
+    # Get current bin information
+    cursor.execute("""
+        SELECT *
+        FROM bins
+        WHERE bin_id = %s
+    """, (bin_id,))
+
+    bin_data = cursor.fetchone()
+
+    if not bin_data:
+        cursor.close()
+        connection.close()
+
+        return jsonify({
+            "message": "Bin not found"
+        }), 404
+
+    new_level = float(bin_data["current_level"]) + float(quantity)
+
+    # Check capacity
+    if new_level > float(bin_data["max_capacity"]):
+        cursor.close()
+        connection.close()
+
+        return jsonify({
+            "message": "Bin capacity exceeded"
+        }), 400
+
+    # Update bin level
+    cursor.execute("""
+        UPDATE bins
+        SET current_level = %s,
+            last_updated = CURRENT_TIMESTAMP
+        WHERE bin_id = %s
+    """, (new_level, bin_id))
+
+    connection.commit()
+
+    cursor.close()
+    connection.close()
+
+    return jsonify({
+        "message": "Bin level updated successfully",
+        "bin_id": bin_id,
+        "previous_level": float(bin_data["current_level"]),
+        "new_level": new_level
+    }), 200
+
+
+
+
+@app.route("/api/bin-history", methods=["POST"])
+def create_bin_history():
+
+    data = request.get_json()
+
+    bin_id = data.get("bin_id")
+    changed_by = data.get("changed_by")
+    previous_level = data.get("previous_level")
+    new_level = data.get("new_level")
+
+    if not bin_id or not changed_by:
+        return jsonify({
+            "message": "Bin ID and user are required"
+        }), 400
+
+    if previous_level is None or new_level is None:
+        return jsonify({
+            "message": "Previous level and new level are required"
+        }), 400
+
+    change_quantity = float(new_level) - float(previous_level)
+
+    connection = get_db_connection()
+    cursor = connection.cursor()
+
+    query = """
+        INSERT INTO bin_status_history
+        (bin_id, changed_by, previous_level, new_level, change_quantity)
+        VALUES (%s, %s, %s, %s, %s)
+    """
+
+    values = (
+        bin_id,
+        changed_by,
+        previous_level,
+        new_level,
+        change_quantity
+    )
+
+    cursor.execute(query, values)
+
+    connection.commit()
+
+    history_id = cursor.lastrowid
+
+    cursor.close()
+    connection.close()
+
+    return jsonify({
+        "message": "Bin status history created successfully",
+        "history_id": history_id
+    }), 201
+
+
+
+@app.route("/api/collections", methods=["POST"])
+def create_collection():
+
+    data = request.get_json()
+
+    waste_record_id = data.get("waste_record_id")
+    bin_id = data.get("bin_id")
+    collected_by = data.get("collected_by")
+    quantity_collected = data.get("quantity_collected")
+    collection_date = date.today()
+    collection_time = datetime.now().time()
+
+    if not waste_record_id or not bin_id or not collected_by:
+        return jsonify({
+            "message": "Waste record, bin and operator are required"
+        }), 400
+
+    if not quantity_collected:
+        return jsonify({
+            "message": "Quantity collected is required"
+        }), 400
+
+    connection = get_db_connection()
+    cursor = connection.cursor()
+
+    query = """
+    INSERT INTO collections
+    (waste_record_id, bin_id, collected_by, quantity_collected,
+     collection_date, collection_time)
+    VALUES (%s, %s, %s, %s, %s, %s)
+"""
+
+    values = (
+    waste_record_id,
+    bin_id,
+    collected_by,
+    quantity_collected,
+    collection_date,
+    collection_time
+)
+
+    cursor.execute(query, values)
+
+    connection.commit()
+
+    collection_id = cursor.lastrowid
+
+    cursor.close()
+    connection.close()
+
+    return jsonify({
+        "message": "Collection record created successfully",
+        "collection_id": collection_id
+    }), 201
+
+@app.route("/api/alerts", methods=["POST"])
+def create_alert():
+
+    data = request.get_json()
+
+    bin_id = data.get("bin_id")
+    alert_type = data.get("alert_type")
+    message = data.get("message")
+    severity = data.get("severity", "MEDIUM")
+
+    if not bin_id or not alert_type or not message:
+        return jsonify({
+            "message": "Bin, alert type and message are required"
+        }), 400
+
+    connection = get_db_connection()
+    cursor = connection.cursor()
+
+    query = """
+        INSERT INTO alerts
+        (bin_id, alert_type, message, severity)
+        VALUES (%s, %s, %s, %s)
+    """
+
+    values = (
+        bin_id,
+        alert_type,
+        message,
+        severity
+    )
+
+    cursor.execute(query, values)
+
+    connection.commit()
+
+    alert_id = cursor.lastrowid
+
+    cursor.close()
+    connection.close()
+
+    return jsonify({
+        "message": "Alert created successfully",
+        "alert_id": alert_id
     }), 201
 
 if __name__ == "__main__":
