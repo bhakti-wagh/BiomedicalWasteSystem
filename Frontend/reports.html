@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Dashboard - Biomedical Waste Management</title>
+    <title>Reports - Biomedical Waste Management</title>
 
     <link rel="stylesheet" href="css/style.css">
 </head>
@@ -14,19 +14,17 @@
 
     <div class="layout">
 
-        <!-- Sidebar -->
-
         <aside class="sidebar">
 
             <h2>BioWaste</h2>
 
             <nav>
 
-                <a href="dashboard.html" class="active">
+                <a href="dashboard.html">
                     Dashboard
                 </a>
 
-                 <a href="waste.html">
+                <a href="waste.html">
                     Waste Management
                 </a>
 
@@ -42,9 +40,10 @@
                     Alerts
                 </a>
 
-                <a href="reports.html">
+                <a href="reports.html" class="active">
                     Reports
                 </a>
+
             </nav>
 
             <button id="logoutBtn">
@@ -54,28 +53,14 @@
         </aside>
 
 
-        <!-- Main Content -->
-
         <main class="main-content">
 
-            <div class="top-section">
+            <h1>Reports</h1>
 
-                <div>
-                    <h1>Dashboard</h1>
-
-                    <p>
-                        Welcome, <span id="userName"></span>
-                    </p>
-
-                    <p>
-                        Role: <span id="userRole"></span>
-                    </p>
-                </div>
-
-            </div>
+            <p>View biomedical waste management summary.</p>
 
 
-            <!-- Dashboard Cards -->
+            <!-- Summary Cards -->
 
             <div class="dashboard">
 
@@ -90,8 +75,8 @@
                 </div>
 
                 <div class="card">
-                    <h2>Near Full Bins</h2>
-                    <p id="nearFullBins">Loading...</p>
+                    <h2>Total Collections</h2>
+                    <p id="totalCollections">Loading...</p>
                 </div>
 
                 <div class="card">
@@ -99,10 +84,42 @@
                     <p id="openAlerts">Loading...</p>
                 </div>
 
-                <div class="card">
-                    <h2>Total Collections</h2>
-                    <p id="totalCollections">Loading...</p>
-                </div>
+            </div>
+
+
+            <!-- Waste Records -->
+
+            <div class="table-container">
+
+                <h2>Waste Records</h2>
+
+                <table>
+
+                    <thead>
+
+                        <tr>
+                            <th>Record ID</th>
+                            <th>Waste Type</th>
+                            <th>Category</th>
+                            <th>Location</th>
+                            <th>Quantity</th>
+                            <th>Date</th>
+                            <th>Status</th>
+                        </tr>
+
+                    </thead>
+
+                    <tbody id="wasteTableBody">
+
+                        <tr>
+                            <td colspan="7">
+                                Loading...
+                            </td>
+                        </tr>
+
+                    </tbody>
+
+                </table>
 
             </div>
 
@@ -111,7 +128,7 @@
     </div>
 
 
-    <script src="js/dashboard.js"></script>
+    <script src="js/reports.js"></script>
 
 </body>
 

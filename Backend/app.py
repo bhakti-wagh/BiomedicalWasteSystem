@@ -535,19 +535,19 @@ def create_collection():
     query = """
         INSERT INTO collections
         (waste_record_id, bin_id, collected_by, quantity_collected,
-         collection_date, collection_time)
-        VALUES (%s, %s, %s, %s, %s, %s)
+        collection_date, collection_time, status)
+        VALUES (%s, %s, %s, %s, %s, %s, %s)
     """
 
     values = (
-        waste_record_id,
-        bin_id,
-        collected_by,
-        quantity_collected,
-        collection_date,
-        collection_time
-    )
-
+    waste_record_id,
+    bin_id,
+    collected_by,
+    quantity_collected,
+    collection_date,
+    collection_time,
+    "COMPLETED"
+)
     cursor.execute(query, values)
 
     collection_id = cursor.lastrowid

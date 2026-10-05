@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Alerts - Biomedical Waste Management</title>
+
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+
+    <div class="layout">
+
+        <aside class="sidebar">
+
+            <h2>BioWaste</h2>
+
+            <nav>
+
+                <a href="dashboard.html">
+                    Dashboard
+                </a>
+
+                <a href="waste.html">
+                    Waste Management
+                </a>
+
+                <a href="bins.html">
+                    Bins
+                </a>
+
+                <a href="collections.html">
+                    Collections
+                </a>
+
+                <a href="alerts.html" class="active">
+                    Alerts
+                </a>
+
+                <a href="#">
+                    Reports
+                </a>
+
+            </nav>
+
+            <button id="logoutBtn">
+                Logout
+            </button>
+
+        </aside>
+
+
+        <main class="main-content">
+
+            <h1>Alerts</h1>
+
+            <p>Monitor and manage biomedical waste system alerts.</p>
+
+
+            <div class="table-container">
+
+                <table>
+
+                    <thead>
+
+                        <tr>
+                            <th>Alert ID</th>
+                            <th>Bin ID</th>
+                            <th>Alert Type</th>
+                            <th>Message</th>
+                            <th>Severity</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+
+                    </thead>
+
+                    <tbody id="alertTableBody">
+
+                        <tr>
+                            <td colspan="7">
+                                Loading...
+                            </td>
+                        </tr>
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </main>
+
+    </div>
+
+
+    <script src="js/alerts.js"></script>
+
+</body>
+
+</html>

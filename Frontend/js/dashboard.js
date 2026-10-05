@@ -1,10 +1,23 @@
-
 const user = JSON.parse(localStorage.getItem("user"));
 
-console.log(user);
+
+// Check login
+
+if (!user) {
+
+    window.location.href = "first.html";
+
+}
+
+
+// Display user information
 
 document.getElementById("userName").textContent = user.name;
+
 document.getElementById("userRole").textContent = user.role;
+
+
+// Load Dashboard
 
 async function loadDashboard() {
 
@@ -15,6 +28,7 @@ async function loadDashboard() {
         );
 
         const data = await response.json();
+
 
         document.getElementById("totalWaste").textContent =
             data.total_waste + " kg";
@@ -31,17 +45,23 @@ async function loadDashboard() {
         document.getElementById("totalCollections").textContent =
             data.total_collections;
 
+
     } catch (error) {
 
         console.error("Dashboard error:", error);
 
     }
+
 }
+
 
 loadDashboard();
 
 
-document.getElementById("logoutBtn").addEventListener("click", function() {
+// Logout
+
+document.getElementById("logoutBtn")
+.addEventListener("click", function() {
 
     localStorage.removeItem("user");
 
